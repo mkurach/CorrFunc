@@ -21,22 +21,16 @@ void readLustre(){
         fileOut[i] = new TFile(Form("./output/%s.root",cases[i].Data()), "RECREATE");
         for(int j = 0; j < _N_EPSILON_; j++) {
             for(int k = 0; k < _N_PAIRS_; k++) {
-                if ((i==0 && j==4 && k ==2) || (i==0 && j==5 && k ==2) ||(i==0 && j==6 && k ==2) ||(i==1 && j==6 && k ==2) || (i==2 && j==0 && k ==2) || (i==2 && j==1 && k ==2) ||(i==2 && j==2 && k ==2)||(i==2 && j==3 && k ==2)||(i==2 && j==4 && k ==2))
-                    continue;
-                else {
-                    file[i][j][k] = new TFile(Form("../lustre/hades/user/mkurach/inz/%s/%sE%d%s/femto%s19a.root",cases[i].Data(),hubb[i].Data(),j,delt[i].Data(),pairs[k].Data()));
-                    for (int l = 0; l < _N_HIST_; l++) {
-                        if((l == 2 && k == 1) || (l == 2 && k == 2)) //pairs without qsc
-                            continue;
-                        else {
-                            hist[i][j][k][l] = (TH1D*) file[i][j][k]->Get(hists[l].Data());
-                            hist[i][j][k][l] = (TH1D*)hist[i][j][k][l]->Clone(Form("%sE%d%s%s",cases[i].Data(),j,pairs[k].Data(),hists[l].Data()));
-                            fileOut[i]->cd();
-                            hist[i][j][k][l]->Write();
-                        }
+                file[i][j][k] = new TFile(Form("../lustre/hades/user/mkurach/inz/%s/%sE%d%s/femto%s19a.root",cases[i].Data(),hubb[i].Data(),j,delt[i].Data(),pairs[k].Data()));
+                for (int l = 0; l < _N_HIST_; l++) {
+                    if((l == 2 && k == 1) || (l == 2 && k == 2)) //pairs without qsc
+                        continue;
+                    else {
+                        hist[i][j][k][l] = (TH1D*) file[i][j][k]->Get(hists[l].Data());
+                        hist[i][j][k][l] = (TH1D*)hist[i][j][k][l]->Clone(Form("%sE%d%s%s",cases[i].Data(),j,pairs[k].Data(),hists[l].Data()));
+                        fileOut[i]->cd();
+                        hist[i][j][k][l]->Write();
                     }
-\
-
                 }
             }
         }
@@ -55,24 +49,21 @@ void makeCorrFunc() {
         fileIn[i] = new TFile(Form("./output/%s.root",cases[i].Data()));
         fileOut[i] = new TFile(Form("./output/%sCorrFun.root",cases[i].Data()), "RECREATE");
         for(int j = 0; j < _N_EPSILON_; j++) {
-            for(int k = 0; k < _N_PAIRS_; k++) {
-                if ((i==0 && j==4 && k ==2) || (i==0 && j==5 && k ==2) ||(i==0 && j==6 && k ==2) ||(i==1 && j==6 && k ==2) || (i==2 && j==0 && k ==2) || (i==2 && j==1 && k ==2) ||(i==2 && j==2 && k ==2)||(i==2 && j==3 && k ==2)||(i==2 && j==4 && k ==2))
-                    continue;
-                else {                    
-                    hist[i][j][k][0] = (TH1D*) fileIn[i]->Get(Form("%sE%d%snum1d",cases[i].Data(),j,pairs[k].Data()));
-                    hist[i][j][k][0] = (TH1D*) hist[i][j][k][0]->Clone(Form("%sE%d%sCorrFunc",cases[i].Data(),j,pairs[k].Data()));
-                    hist[i][j][k][0]->Divide((TH1D*) fileIn[i]->Get(Form("%sE%d%sden1d",cases[i].Data(),j,pairs[k].Data())));
+            for(int k = 0; k < _N_PAIRS_; k++) {               
+                hist[i][j][k][0] = (TH1D*) fileIn[i]->Get(Form("%sE%d%snum1d",cases[i].Data(),j,pairs[k].Data()));
+                hist[i][j][k][0] = (TH1D*) hist[i][j][k][0]->Clone(Form("%sE%d%sCorrFunc",cases[i].Data(),j,pairs[k].Data()));
+                hist[i][j][k][0]->Divide((TH1D*) fileIn[i]->Get(Form("%sE%d%sden1d",cases[i].Data(),j,pairs[k].Data())));
+                fileOut[i]->cd();
+                hist[i][j][k][0]->Write();
+                if(k == 0) { //pairs with qsc
+                    hist[i][j][k][1] = (TH1D*) fileIn[i]->Get(Form("%sE%d%snum1dqsc",cases[i].Data(),j,pairs[k].Data()));
+                    hist[i][j][k][1] = (TH1D*) hist[i][j][k][1]->Clone(Form("%sE%d%sCorrFuncQsc",cases[i].Data(),j,pairs[k].Data()));
+                    hist[i][j][k][1]->Divide((TH1D*) fileIn[i]->Get(Form("%sE%d%sden1d",cases[i].Data(),j,pairs[k].Data())));
                     fileOut[i]->cd();
-                    hist[i][j][k][0]->Write();
-                    if(k == 0) { //pairs with qsc
-                        hist[i][j][k][1] = (TH1D*) fileIn[i]->Get(Form("%sE%d%snum1dqsc",cases[i].Data(),j,pairs[k].Data()));
-                        hist[i][j][k][1] = (TH1D*) hist[i][j][k][1]->Clone(Form("%sE%d%sCorrFuncQsc",cases[i].Data(),j,pairs[k].Data()));
-                        hist[i][j][k][1]->Divide((TH1D*) fileIn[i]->Get(Form("%sE%d%sden1d",cases[i].Data(),j,pairs[k].Data())));
-                        fileOut[i]->cd();
-                        hist[i][j][k][1]->Write();
-                    }
-
+                    hist[i][j][k][1]->Write();
                 }
+
+                
             }
         }
         fileIn[i]->Close();
@@ -80,12 +71,10 @@ void makeCorrFunc() {
         fileOut[i]->Close();
     }
 
-
-
 }
 
 void getCorrFunc() {
-    readLustre();
+    //readLustre();
     makeCorrFunc();
 
 

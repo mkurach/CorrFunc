@@ -101,8 +101,6 @@ void multiplePlot(TH1D *histTab[], TCanvas* can, TString* entry, size_t n, bool 
 
 
 
-
-
 }
 
 void drawLine(TH1D* hist, TCanvas* can) {
@@ -116,21 +114,22 @@ void drawLine(TH1D* hist, TCanvas* can) {
 }
 
 
-void fixedPairs() {
+
+
+
+void compFixedPairs() {
 
     TH1D* hist[_N_CASES_][_N_PAIRS_][_N_HIST_-1][_N_EPSILON_];
     TFile *fileIn[_N_CASES_][_N_PAIRS_];
     TCanvas *can[_N_CASES_][_N_PAIRS_][_N_HIST_-1];
     TString entries[7] = {"#epsilon = 0.0","#epsilon = 0.1","#epsilon = 0.2","#epsilon = 0.3","#epsilon = 0.4","#epsilon = 0.5","#epsilon = 0.6"};
 
+    gROOT -> SetBatch(kTRUE);
+
     //READING
-    TFile *fileOut[_N_PAIRS_];
-    for (int i = 0; i < _N_PAIRS_; i ++)
-        fileOut[i] = new TFile(Form("./output/outputComp/fixedPairs%s.root",pairs[i].Data()), "RECREATE");
-    
     for(int i = 0; i < _N_CASES_; i ++) {
         for(int j = 0; j < _N_PAIRS_; j++) {
-            fileIn[i][j] = new TFile(Form("./output/%s%s.root",cases[i].Data(),pairs[j].Data()));
+            fileIn[i][j] = new TFile(Form("./outputCorrFunc/%s%s.root",cases[i].Data(),pairs[j].Data()));
             
             for (int k = 0; k < _N_EPSILON_; k++) {
                 hist[i][j][0][k] = (TH1D*) fileIn[i][j]->Get(Form("%sE%d%sCorrFunc",cases[i].Data(),k,pairs[j].Data()));
@@ -142,7 +141,14 @@ void fixedPairs() {
 
     }
 
+
+
+
     //DRAWING
+    TFile *fileOut[_N_PAIRS_];
+    for (int i = 0; i < _N_PAIRS_; i ++)
+        fileOut[i] = new TFile(Form("./outputFixedPairs/%s.root",pairs[i].Data()), "RECREATE");
+
     for(int i = 0; i < _N_CASES_; i ++) {
         for(int j = 0; j < _N_PAIRS_; j++) {
             for (int k = 0; k < _N_EPSILON_; k++) {
@@ -207,11 +213,7 @@ void fixedPairs() {
 
 
 
-    
-}
-
-void compCorrFunc() {
-    gROOT -> SetBatch(kTRUE);
-    fixedPairs();
     gROOT -> SetBatch(kFALSE);
 }
+
+

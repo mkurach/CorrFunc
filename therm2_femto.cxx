@@ -50,6 +50,7 @@
 #define PPID 2212
 #define SPPID 3222
 #define LAPID 3122
+//#define NPID 2112
 #define ABSRAP 1.0
 #define ETAABS 1.0
 #define PTMIN 0.05
@@ -240,6 +241,7 @@ int main(int argc, char **argv)
     else if (tPairType == "kaon-kaon")	   pairtype = 1;
     else if (tPairType == "pionM-pionM")   pairtype = 8; //hz
     else if (tPairType == "proton-proton") pairtype = 2; //hz
+    //else if (tPairType == "neutron-neutron") pairtype = 3; //mk
     else {
       PRINT_MESSAGE("therm2_femto Unknown pair type: " << tPairType);
       PRINT_MESSAGE("Please provide the proper pair name in the main INI file.");
@@ -360,7 +362,7 @@ int main(int argc, char **argv)
     ktmax = 1.2;
     break;
   case 19:
-    ktmin = 0.1; //od 0.1 będzie dla wszystkich mk
+    ktmin = 0.1; //mk
     ktmax = 2.0;
     break;
   case 20:
@@ -457,6 +459,7 @@ int main(int argc, char **argv)
     ptmax2 = 1.8;
     break;
   case 3:
+  //uzupelnic dla neutronow
   case 4:
     ptmin1 = 0.05;
     ptmin2 = 0.05;
@@ -493,10 +496,12 @@ int main(int argc, char **argv)
       partpid = PIPID;
     else if (pairtype == 1) 
       partpid = KPID;
-    else if (pairtype == 2) 
+    else if (pairtype == 2) //hz
       partpid = PPID;
     else if (pairtype == 8) //hz
       partpid = -PIPID;
+    //else if (pairtype == 3) //mk
+      //partpid = NPID;
   }
 
 // ##############################################################

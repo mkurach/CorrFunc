@@ -79,6 +79,7 @@ void multiplePlot(TH1D *histTab[], TCanvas* can, TString* entry, size_t n, bool 
 
 
     can->cd();
+    TF1* funtmp;
     for (int i = 0; i < n; i++) {        
 
 		histTab[i]->SetMarkerStyle(21);
@@ -87,7 +88,7 @@ void multiplePlot(TH1D *histTab[], TCanvas* can, TString* entry, size_t n, bool 
 	
         histTab[i]->SetMarkerColor(colors[i]);
         histTab[i]->SetLineColor(colors[i]);
-
+        
         legend->AddEntry(histTab[i],entry[i],"AP");
 
         if (i == 0)
@@ -142,8 +143,6 @@ void compFixedPairs() {
     }
 
 
-
-
     //DRAWING
     TFile *fileOut[_N_PAIRS_];
     for (int i = 0; i < _N_PAIRS_; i ++)
@@ -153,16 +152,12 @@ void compFixedPairs() {
         for(int j = 0; j < _N_PAIRS_; j++) {
             for (int k = 0; k < _N_EPSILON_; k++) {
 
-                if (j == 0) {
-                    hist[i][j][0][k]->Rebin(5);
-                    hist[i][j][0][k]->Scale(0.2);
-                    hist[i][j][1][k]->Rebin(5);
-                    hist[i][j][1][k]->Scale(0.2);
-                    
+                if (j == 0) 
                     hist[i][j][1][k]->GetXaxis()->SetRangeUser(0.0,0.15);
                     
-                }
+                
                 hist[i][j][0][k]->GetXaxis()->SetRangeUser(0.0,0.15);
+                hist[i][j][0][k]->GetFunction("fun")->SetLineColor(colors[k]);
             }
 
             
@@ -208,9 +203,6 @@ void compFixedPairs() {
         fileOut[i]->Save();
         fileOut[i]->Close();
     }
-
-
-
 
 
     gROOT -> SetBatch(kFALSE);

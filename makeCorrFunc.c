@@ -7,11 +7,7 @@
 
 
 TString cases[_N_CASES_] = {"caseA","caseB","caseC"};
-//TString hubb[_N_CASES_] = {"H100","H225","H165"};
-//TString delt[_N_CASES_] = {"D2","D4","D4"};
 TString pairs[_N_PAIRS_] = {"pp","pipi","piMpiM"};
-//TString hists[_N_HIST_] = {"num1d","den1d","num1dqsc"};
-
 
 
 Double_t fitFunction(Double_t *x, Double_t *par) { // 0 - lambda, 1 - R
@@ -26,8 +22,9 @@ void makeCorrFunc() {
     TFile *fileIn[_N_CASES_];
     TFile *fileOut[_N_CASES_][_N_PAIRS_];
 
-    //READING
+    gROOT -> SetBatch(kTRUE);
 
+    //READING
     for (int i = 0; i < _N_CASES_; i++) {
         fileIn[i] = new TFile(Form("./outputLustre/%s.root",cases[i].Data()));
         for (int j = 0; j < _N_PAIRS_; j++) {
@@ -36,25 +33,27 @@ void makeCorrFunc() {
                 hist[i][j][k][0] = (TH1D*) fileIn[i]->Get(Form("%sE%d%snum1d",cases[i].Data(),k,pairs[j].Data()));
                 hist[i][j][k][0] = (TH1D*) hist[i][j][k][0]->Clone(Form("%sE%d%sCorrFunc",cases[i].Data(),k,pairs[j].Data()));
                 hist[i][j][k][0]->Divide((TH1D*) fileIn[i]->Get(Form("%sE%d%sden1d",cases[i].Data(),k,pairs[j].Data())));
-                //fileOut[i][j]->cd();
                 hist[i][j][k][0]->SetTitle("");
-                //hist[i][j][k][0]->Write();
-                if(j == 0) { //pairs with qsc
+                if(j == 0) { //pairs with qsc and ones needing rebinnning
                     hist[i][j][k][1] = (TH1D*) fileIn[i]->Get(Form("%sE%d%snum1dqsc",cases[i].Data(),k,pairs[j].Data()));
                     hist[i][j][k][1] = (TH1D*) hist[i][j][k][1]->Clone(Form("%sE%d%sCorrFuncQsc",cases[i].Data(),k,pairs[j].Data()));
                     hist[i][j][k][1]->Divide((TH1D*) fileIn[i]->Get(Form("%sE%d%sden1d",cases[i].Data(),k,pairs[j].Data())));
                     fileOut[i][j]->cd();
                     hist[i][j][k][1]->SetTitle("");
+                    hist[i][j][k][1]->Rebin(5);
+                    hist[i][j][k][1]->Scale(0.2);
                     hist[i][j][k][1]->Write();
+
+                    hist[i][j][k][0]->Rebin(5);
+                    hist[i][j][k][0]->Scale(0.2);
+
+
+
                 }
 
             }
-            //fileOut[i][j]->Close();
-            //fileOut[i][j]->Save();
-
 
         }
-        //fileIn[i]->Close();
     }
 
 
@@ -72,13 +71,14 @@ void makeCorrFunc() {
 
     Double_t xValues[_N_EPSILON_] = {0.0,0.1,0.2,0.3,0.4,0.5,0.6};
     Double_t xErr[_N_EPSILON_] = {0};
-    Double_t minFit = 0;
+    Double_t minFit = 0.003;
     Double_t maxFit = 0.5;
 
 
     for(int i = 0; i < _N_CASES_; i ++) {
         for(int j = 0; j < _N_PAIRS_; j++) {
             for(int k = 0; k < _N_EPSILON_; k++) {
+
                 hist[i][j][k][0]->Fit("fun","","",minFit,maxFit);
                 fileOut[i][j]->cd();
                 hist[i][j][k][0]->Write();
@@ -87,6 +87,7 @@ void makeCorrFunc() {
                 lambdyErr[i][j][k] = fun->GetParError(0);
                 r[i][j][k] = fun->GetParameter(1);
                 r[i][j][k] = fun->GetParError(1);
+
             }
             fileOut[i][j]->Close();
             fileOut[i][j]->Save();
@@ -94,12 +95,34 @@ void makeCorrFunc() {
         }
     }
 
+    //TXT FILE WITH RESULTS
+
+    ofstream filetxt;
+    filetxt.open("./outputCorrFunc/fitResults.txt");
+
+    for(int i = 0; i < _N_PAIRS_; i++) {
+        filetxt<<pairs[i].Data()<<"\n";
+
+        for(int j = 0; j <_N_CASES_; j++) {
+            filetxt<<"\t"<<cases[j].Data()<<"\n";
+
+            for(int k = 0; k < _N_EPSILON_; k++) {
+                filetxt<<"\t\tEpsilon = "<<k<<"\n";
+                filetxt<<"\t\t\tlambda = "<<lambdy[j][i][k];
+                filetxt<<"\tR = "<<r[j][i][k]<<"\n";
+            }
+
+        }
+
+    }
+
+
     //COMPARING FITTING RESULTS
+
     TGraphErrors *grLambda[_N_CASES_][_N_PAIRS_];
     TGraphErrors *grR[_N_CASES_][_N_PAIRS_];
-
-
     TFile *fileOut2 = new TFile("./outputCorrFunc/fitResults.root", "RECREATE");
+
     for(int i = 0; i < _N_CASES_; i++) {
         for(int j = 0; j < _N_PAIRS_; j++) {
             grLambda[i][j] = new TGraphErrors(_N_EPSILON_,xValues,lambdy[i][j],xErr,lambdyErr[i][j]);
@@ -118,7 +141,7 @@ void makeCorrFunc() {
     fileOut2->Close();
     fileOut2->Save();
 
-
+    gROOT -> SetBatch(kFALSE);
 
 
 }

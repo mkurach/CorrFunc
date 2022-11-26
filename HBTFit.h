@@ -1,25 +1,25 @@
 #ifndef _TH2_HBTFIT_H_
-    #define _TH2_HBTFIT_H_
+#define _TH2_HBTFIT_H_
 
-    #include <TH3D.h>
-    #include <TF3.h>
-    #include "THGlobal.h"
+#include <TH3D.h>
+#include <TF3.h>
+#include "THGlobal.h"
 
-    class HBTFit 
-    {
-        public:
-            HBTFit();
-            ~HBTFit();
+class HBTFit 
+{
+    public:
+        HBTFit();
+        ~HBTFit();
 
-            TH3D *getfitprojc(TH3D *expden, TF3 *funqk);
-            void preparepad(TH1D *hExp, TH1D* hFit);
-            void preparehist(TH1D *hist, int projType, int wType, TString type);
-            TH1D *getproj(TH3D *numq, TH3D *denq, int nproj, int wbin, double norm);
-            Double_t fungek(Double_t *x, Double_t *par);
-            Double_t fungek1D(Double_t *x, Double_t *par);
-    };
+        TH3D *getfitprojc(TH3D *expden, TF3 *funqk);
+        void preparepad(TH1D *hExp, TH1D* hFit);
+        void preparehist(TH1D *hist, int projType, int wType, TString type);
+        TH1D *getproj(TH3D *numq, TH3D *denq, int nproj, int wbin, double norm);
+        Double_t fungek(Double_t *x, Double_t *par);
+        Double_t fungek1D(Double_t *x, Double_t *par);
+};
 
-    HBTFit::HBTFit()
+HBTFit::HBTFit()
 {
 }
 
@@ -132,7 +132,7 @@ TH1D* HBTFit::getproj(TH3D *numq, TH3D *denq, int nproj, int wbin, double norm)
     numbuf = new TH1D(*((TH1D *) numq->Project3D(sProj)));
 
     hproj = new TH1D(*numbuf);
-    hproj->Sumw2();
+    //hproj->Sumw2(); //already created
     hproj->Reset("ICE");
     hproj->Divide(numbuf, denbuf, 1.0, 1.0, "");
 
@@ -156,7 +156,8 @@ Double_t HBTFit::fungek(Double_t *x, Double_t *par)
     Double_t qosq = x[0]*x[0];
     Double_t qssq = x[1]*x[1];
     Double_t qlsq = x[2]*x[2];
-    Double_t lam =  TMath::Abs(par[1]);
+    //Double_t lam =  TMath::Abs(par[1]);
+    Double_t lam =  par[1];
 
     Double_t gpart = exp((-par[2]*par[2]*qosq-par[3]*par[3]*qssq-par[4]*par[4]*qlsq)/0.038938);
 
@@ -166,10 +167,11 @@ Double_t HBTFit::fungek(Double_t *x, Double_t *par)
 Double_t HBTFit::fungek1D(Double_t *x, Double_t *par)
 {
     Double_t qinv = x[0]*x[0];
-    Double_t lam =  TMath::Abs(par[0]);
-    Double_t gpart = exp((-par[1]*par[1]*qinv)/0.038938);
+    //Double_t lam =  TMath::Abs(par[0]);
+    Double_t lam =  par[1];
+    Double_t gpart = exp((-par[2]*par[2]*qinv)/0.038938);
 
-    return (par[2] * (1 + lam*gpart));
+    return (par[0] * (1 + lam*gpart));
 }
 
 

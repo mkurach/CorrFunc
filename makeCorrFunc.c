@@ -8,13 +8,14 @@
 
 TString cases[_N_CASES_] = {"caseA","caseB","caseC"};
 TString pairs[_N_PAIRS_] = {"pp","pipi","piMpiM"};
+double gev = 1 / 0.1975;
 
 
-Double_t fitFunction(Double_t *x, Double_t *par) { // 0 - lambda, 1 - R
-    if(x[0] >= 0)
-        return 1+par[0]*TMath::Exp(-par[1]*par[1]*x[0]*x[0]);
-    else    
-        return 0;
+Double_t fitFunction(Double_t *x, Double_t *par) { //  0 - normalizacja, 1 - lambda, 2 - R,
+    Double_t lambda = par[1];
+    Double_t exp = TMath::Exp(-par[2]*par[2]*x[0]*x[0]*gev*gev);
+    return par[0]*(1 + lambda * exp);
+
 }
 
 void makeCorrFunc() {
@@ -58,10 +59,12 @@ void makeCorrFunc() {
 
 
     //FUNCTION
-    Int_t params = 2;
-    TF1 *fun = new TF1("fun",fitFunction,0,0.5,params);  //0 - lambda, 1 - R
-    fun->SetParameter(0,0.5);
-    fun->SetParameter(1,10);
+    Int_t params = 3;
+    TF1 *fun = new TF1("fun",fitFunction,0,0.5,params);  //0 - normalizacja, 1 - lambda, 2 - R
+    fun->SetParameter(0,1);
+    fun->SetParameter(1,0.5);
+    fun->SetParameter(2,10);
+
 
     //FITTING
     Double_t lambdy[_N_CASES_][_N_PAIRS_][_N_EPSILON_];
@@ -83,10 +86,10 @@ void makeCorrFunc() {
                 fileOut[i][j]->cd();
                 hist[i][j][k][0]->Write();
 
-                lambdy[i][j][k] = fun->GetParameter(0);
-                lambdyErr[i][j][k] = fun->GetParError(0);
-                r[i][j][k] = fun->GetParameter(1);
-                r[i][j][k] = fun->GetParError(1);
+                lambdy[i][j][k] = fun->GetParameter(1);
+                lambdyErr[i][j][k] = fun->GetParError(1);
+                r[i][j][k] = fun->GetParameter(2);
+                r[i][j][k] = fun->GetParError(2);
 
             }
             fileOut[i][j]->Close();

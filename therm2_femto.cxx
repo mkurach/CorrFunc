@@ -50,7 +50,8 @@
 #define PPID 2212
 #define SPPID 3222
 #define LAPID 3122
-//#define NPID 2112
+//mk
+#define NPID 2112
 #define ABSRAP 1.0
 #define ETAABS 1.0
 #define PTMIN 0.05
@@ -241,13 +242,13 @@ int main(int argc, char **argv)
     else if (tPairType == "kaon-kaon")	   pairtype = 1;
     else if (tPairType == "pionM-pionM")   pairtype = 8; //hz
     else if (tPairType == "proton-proton") pairtype = 2; //hz
-    //else if (tPairType == "neutron-neutron") pairtype = 3; //mk
+    else if (tPairType == "neutron-neutron") pairtype = 9; //mk
     else {
       PRINT_MESSAGE("therm2_femto Unknown pair type: " << tPairType);
       PRINT_MESSAGE("Please provide the proper pair name in the main INI file.");
       exit(_ERROR_FEMTO_UNKNOWN_PAIRTYPE_);
     }
-    if (pairtype == 2) docoulomb = 1;
+    if (pairtype == 2) docoulomb = 1; //coulomb only for protons
     tcut	= tMainConfig->GetParameter("TimeCut").Atof();
     evtomix	= tMainConfig->GetParameter("EventsToMix").Atoi();
     if(tMainConfig->GetParameter("EnableOnlyPrimordial") == "yes")
@@ -459,7 +460,6 @@ int main(int argc, char **argv)
     ptmax2 = 1.8;
     break;
   case 3:
-  //uzupelnic dla neutronow
   case 4:
     ptmin1 = 0.05;
     ptmin2 = 0.05;
@@ -485,6 +485,12 @@ int main(int argc, char **argv)
     ptmax1 = PTMAX;
     ptmax2 = PTMAX;
     break; 
+  case 9: //mk
+    ptmin1 = PTMIN;
+    ptmin2 = PTMIN;
+    ptmax1 = PTMAX;
+    ptmax2 = PTMAX;
+    break;
   }
 
   if (docoulomb) {
@@ -500,8 +506,8 @@ int main(int argc, char **argv)
       partpid = PPID;
     else if (pairtype == 8) //hz
       partpid = -PIPID;
-    //else if (pairtype == 3) //mk
-      //partpid = NPID;
+    else if (pairtype == 9) //mk
+      partpid = NPID;
   }
 
 // ##############################################################
@@ -756,140 +762,142 @@ int main(int argc, char **argv)
     chn->GetEntry(iter);
     if (buf.eventid != curev) {
       if (eviter>-1) {
-	if (partpid2 == 0) {
-	  // Mix different-event particles;
-	  // for identical particle correlations
-	  for (int fiter=0; fiter<evtscount[eviter]; fiter++) {
-	    for (int mixiter=0; mixiter<evtomix; mixiter++) {
-	      if (mixiter != eviter) {
-		for (int siter=0; siter<evtscount[mixiter]; siter++) {
-		  PairKinematics(evbuf[eviter][fiter], 
-				 evbuf[mixiter][siter]);
- 		  if ((mKT>ktmin) && (mKT<ktmax)) {
-		    hbetat->Fill(mBetat);
-		    hkt->Fill(mKT);
-		    cdena->Fill(mKO, mKS, mKL, 1.0);
-		    den1d->Fill(fabs(mKStarSigned)*2.0, 1.0);
+        if (partpid2 == 0) {
+          // Mix different-event particles;
+          // for identical particle correlations
+          for (int fiter=0; fiter<evtscount[eviter]; fiter++) {
+            for (int mixiter=0; mixiter<evtomix; mixiter++) {
+              if (mixiter != eviter) {
+                for (int siter=0; siter<evtscount[mixiter]; siter++) {
+                  PairKinematics(evbuf[eviter][fiter],evbuf[mixiter][siter]);
+                  if ((mKT>ktmin) && (mKT<ktmax)) {
+                    hbetat->Fill(mBetat);
+                    hkt->Fill(mKT);
+                    cdena->Fill(fabs(mKO), fabs(mKS), fabs(mKL), 1.0);
+                    den1d->Fill(fabs(mKStarSigned)*2.0, 1.0);
 
-		    cdenasph->Fill(mKR, mKP, mKC);
+                    cdenasph->Fill(mKR, mKP, mKC);
 
-		    if (twospin == 0) {
-		      quantumweight = 1.0+TMath::Cos(-mKO*mRO - mKS*mRS - mKL*mRL + mDE*mDT);
-		    }
-		    else if (twospin == 1) {
-		      if (pcount ==3) {
-			quantumweight = 1.0+TMath::Cos(-mKO*mRO - mKS*mRS - mKL*mRL + mDE*mDT);
-		      }
-		      else {
-			quantumweight = 1.0-TMath::Cos(-mKO*mRO - mKS*mRS - mKL*mRL + mDE*mDT);
-		      }
-		      pcount++;
-		      if (pcount == 4) pcount=0;
-		    }
-		    if (fabs(evbuf[eviter][fiter].t - evbuf[mixiter][siter].t) > 500.0)
-		      quantumweight = 1.0;
-		    cnuma->Fill(mKO, mKS, mKL, quantumweight);
-		    num1d->Fill(fabs(mKStarSigned)*2.0, quantumweight);
-		    
-		    if (docoulomb) {
-		      if (fabs(evbuf[eviter][fiter].t - evbuf[mixiter][siter].t) > 500.0) {
-			coulombweight = 1.0;
-			coulqscpart = 1.0;
-		      }
-		      else if (pairtype != 2)
-			coulombweight = GetQuantumCoulomb();
-		      else 
-			coulombweight = GetQuantumCoulombStrong();
-		      
-		      if (coulombweight > 10.0) {
-			cout << "Weigth for " << fabs(mKStarSigned) << " " << fiter << " " << siter << " " << " is " << coulombweight  << endl;
-		      }
-		      
-		      cnumas->Fill(mKO, mKS, mKL, coulombweight);
-		      num1dqsc->Fill(fabs(mKStarSigned)*2.0, coulombweight);
-		      num1dc->Fill(fabs(mKStarSigned)*2.0, coulqscpart);
-		      cnumasph->Fill(mKR, mKP, mKC, coulombweight);
-		    }
-// 		    if (fabs(mKStarSigned) < 0.1) {
-// 		      double rad = hypot(evbuf[eviter][fiter].x, evbuf[eviter][fiter].y);
-// 		      double phi = TMath::ATan2(evbuf[eviter][fiter].y, evbuf[eviter][fiter].x);
-// 		      simage1->Fill(rad * cos(phi - pairphi), rad * sin(phi - pairphi), 1.0);
-// 		      time1->Fill(evbuf[eviter][fiter].t);
-// 		    }
- 		  }
-		}
-	      }
-	    }
-	  }
-	}
-	//Mix different-event particles
-	//for non-identical particle correlations
-	else {
-	  for (int fiter=0; fiter<evtscount[eviter]; fiter++) {
-	    for (int mixiter=0; mixiter<evtomix; mixiter++) {
-	      for (int siter=0; siter<evtscount2[mixiter]; siter++) {
-		PairKinematics(evbuf[eviter][fiter], 
-			       evbuf2[mixiter][siter]);
-		if ((mKT>ktmin) && (mKT<ktmax) && (mBetat>btmin) && (mBetat<btmax)) {
-		  hbetat->Fill(mBetat);
-		  hkt->Fill(mKT);
-		  
-		  if (mKStarOut > 0.0) 
-		    den1dp->Fill(fabs(mKStarSigned), 1.0);
-		  else
-		    den1dn->Fill(fabs(mKStarSigned), 1.0);
-		  
-		  cdenanonid->Fill(mKStarOut, mKStarSide, mKStarLong, 1);
-		  
-		  cdenasph->Fill(mKR, mKP, mKC);
+                    if (twospin == 0) {
+                      quantumweight = 1.0+TMath::Cos(-mKO*mRO - mKS*mRS - mKL*mRL + mDE*mDT);
+                    }
+                    else if (twospin == 1) {
+                      if (pcount ==3) {
+                        quantumweight = 1.0+TMath::Cos(-mKO*mRO - mKS*mRS - mKL*mRL + mDE*mDT);
+                      }
+                      else {
+                        quantumweight = 1.0-TMath::Cos(-mKO*mRO - mKS*mRS - mKL*mRL + mDE*mDT);
+                      }
+                      pcount++;
+                      if (pcount == 4) pcount=0;
+                    }
 
-		  if (mKStarOut > 0.0) {
-		    if (mixiter != eviter) 
-		      den1dptrue->Fill(fabs(mKStarSigned), 1.0);
-		  }
-		  else {
-		    if (mixiter != eviter) 
-		      den1dntrue->Fill(fabs(mKStarSigned), 1.0);
-		  }
-		  if (docoulomb) {
-		    if (fabs(evbuf[eviter][fiter].t - evbuf[mixiter][siter].t) > 500.0)
-		      coulombweight = 1.0;
-		    else
-		      coulombweight = GetCoulomb();
-		    num1d->Fill(fabs(mKStarSigned), coulombweight); 
-		    cnumanonid->Fill(mKStarOut, mKStarSide, mKStarLong, coulombweight);
-		    
-		    cnumasph->Fill(mKR, mKP, mKC, coulombweight);
-		    
-		    if (mKStarOut > 0.0)
-		      num1dp->Fill(fabs(mKStarSigned), coulombweight);
-		    else
-		      num1dn->Fill(fabs(mKStarSigned), coulombweight);
-		    if (mixiter == eviter) {
-		      cnumanonidtrue->Fill(mKStarOut, mKStarSide, mKStarLong, coulombweight);
-		      if (mKStarOut > 0.0)
-			num1dptrue->Fill(fabs(mKStarSigned), coulombweight);
-		      else
-			num1dntrue->Fill(fabs(mKStarSigned), coulombweight);
-		    }
-		  }
-		  if (fabs(mKStarSigned) < 0.1) {
-		    double rad = hypot(evbuf[eviter][fiter].x, evbuf[eviter][fiter].y);
-		    double phi = TMath::ATan2(evbuf[eviter][fiter].y, evbuf[eviter][fiter].x);
-		    simage1->Fill(rad * cos(phi - pairphi), rad * sin(phi - pairphi), 1.0);
-		    time1->Fill(evbuf[eviter][fiter].t);
+                    if (fabs(evbuf[eviter][fiter].t - evbuf[mixiter][siter].t) > 500.0)
+                      quantumweight = 1.0;
 
-		    rad = hypot(evbuf2[mixiter][siter].x, evbuf2[mixiter][siter].y);
-		    phi = TMath::ATan2(evbuf2[mixiter][siter].y, evbuf2[mixiter][siter].x);
-		    simage2->Fill(rad * cos(phi - pairphi), rad * sin(phi - pairphi), 1.0);
-		    time2->Fill(evbuf2[mixiter][siter].t);
-		    
-		  }
-		}
-	      }
-	    }
-	  }
-	}
+                    cnuma->Fill(fabs(mKO), fabs(mKS), fabs(mKL), quantumweight);
+                    num1d->Fill(fabs(mKStarSigned)*2.0, quantumweight);
+          
+                    if (docoulomb) {
+                      if (fabs(evbuf[eviter][fiter].t - evbuf[mixiter][siter].t) > 500.0) {
+                        coulombweight = 1.0;
+                        coulqscpart = 1.0;
+                      }
+                      else if (pairtype != 2)
+                        coulombweight = GetQuantumCoulomb();
+                      else 
+                        coulombweight = GetQuantumCoulombStrong();
+            
+                      if (coulombweight > 10.0) {
+                        cout << "Weigth for " << fabs(mKStarSigned) << " " << fiter << " " << siter << " " << " is " << coulombweight  << endl;
+                      }
+              
+                      cnumas->Fill(mKO, mKS, mKL, coulombweight);
+                      num1dqsc->Fill(fabs(mKStarSigned)*2.0, coulombweight);
+                      num1dc->Fill(fabs(mKStarSigned)*2.0, coulqscpart);
+                      cnumasph->Fill(mKR, mKP, mKC, coulombweight);
+                    }
+                    // 		    if (fabs(mKStarSigned) < 0.1) {
+                    // 		      double rad = hypot(evbuf[eviter][fiter].x, evbuf[eviter][fiter].y);
+                    // 		      double phi = TMath::ATan2(evbuf[eviter][fiter].y, evbuf[eviter][fiter].x);
+                    // 		      simage1->Fill(rad * cos(phi - pairphi), rad * sin(phi - pairphi), 1.0);
+                    // 		      time1->Fill(evbuf[eviter][fiter].t);
+                    // 		    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        //Mix different-event particles
+        //for non-identical particle correlations
+        else {
+          for (int fiter=0; fiter<evtscount[eviter]; fiter++) {
+            for (int mixiter=0; mixiter<evtomix; mixiter++) {
+              for (int siter=0; siter<evtscount2[mixiter]; siter++) {
+                PairKinematics(evbuf[eviter][fiter],evbuf2[mixiter][siter]);
+                if ((mKT>ktmin) && (mKT<ktmax) && (mBetat>btmin) && (mBetat<btmax)) {
+                  hbetat->Fill(mBetat);
+                  hkt->Fill(mKT);
+            
+                  if (mKStarOut > 0.0) 
+                    den1dp->Fill(fabs(mKStarSigned), 1.0);
+                  else
+                    den1dn->Fill(fabs(mKStarSigned), 1.0);
+            
+                  cdenanonid->Fill(mKStarOut, mKStarSide, mKStarLong, 1);
+                  
+                  cdenasph->Fill(mKR, mKP, mKC);
+
+                  if (mKStarOut > 0.0) {
+                    if (mixiter != eviter) 
+                      den1dptrue->Fill(fabs(mKStarSigned), 1.0);
+                  }
+                  else {
+                    if (mixiter != eviter) 
+                      den1dntrue->Fill(fabs(mKStarSigned), 1.0);
+                  }
+
+                  if (docoulomb) {
+                    if (fabs(evbuf[eviter][fiter].t - evbuf[mixiter][siter].t) > 500.0)
+                      coulombweight = 1.0;
+                    else
+                      coulombweight = GetCoulomb();
+                    num1d->Fill(fabs(mKStarSigned), coulombweight); 
+                    cnumanonid->Fill(mKStarOut, mKStarSide, mKStarLong, coulombweight);
+                    
+                    cnumasph->Fill(mKR, mKP, mKC, coulombweight);
+                    
+                    if (mKStarOut > 0.0)
+                      num1dp->Fill(fabs(mKStarSigned), coulombweight);
+                    else
+                      num1dn->Fill(fabs(mKStarSigned), coulombweight);
+                    if (mixiter == eviter) {
+                      cnumanonidtrue->Fill(mKStarOut, mKStarSide, mKStarLong, coulombweight);
+                      if (mKStarOut > 0.0)
+                        num1dptrue->Fill(fabs(mKStarSigned), coulombweight);
+                      else
+                        num1dntrue->Fill(fabs(mKStarSigned), coulombweight);
+                    }
+                  }
+
+                  if (fabs(mKStarSigned) < 0.1) {
+                    double rad = hypot(evbuf[eviter][fiter].x, evbuf[eviter][fiter].y);
+                    double phi = TMath::ATan2(evbuf[eviter][fiter].y, evbuf[eviter][fiter].x);
+                    simage1->Fill(rad * cos(phi - pairphi), rad * sin(phi - pairphi), 1.0);
+                    time1->Fill(evbuf[eviter][fiter].t);
+
+                    rad = hypot(evbuf2[mixiter][siter].x, evbuf2[mixiter][siter].y);
+                    phi = TMath::ATan2(evbuf2[mixiter][siter].y, evbuf2[mixiter][siter].x);
+                    simage2->Fill(rad * cos(phi - pairphi), rad * sin(phi - pairphi), 1.0);
+                    time2->Fill(evbuf2[mixiter][siter].t);
+              
+                  }
+                }
+              }
+            }
+          }
+        }
       }
       
       curev = buf.eventid;
@@ -898,62 +906,63 @@ int main(int argc, char **argv)
       cout << "\r\tevent " << tEventIter <<"/"<< tNumberOfEvents << ", particle 1 count " << evtscount[eviter];
       evtscount[eviter] = 0;
       if (partpid2 != 0) {
-	cout << ", particle 2 count " << evtscount2[eviter];
-	evtscount2[eviter] = 0;
+        cout << ", particle 2 count " << evtscount2[eviter];
+        evtscount2[eviter] = 0;
       }      
       cout.flush();
       tEventIter++;
     }
+
     if (((buf.pid == partpid) || ((buf.pid == partpid2) && (partpid2 !=0))) && (buf.t<tcut)) {
       pt = hypot(buf.px, buf.py);
+
       if ((((pt>ptmin1) && (pt<ptmax1) && (buf.pid == partpid)) ||
-	   ((pt>ptmin2) && (pt<ptmax2) && (buf.pid == partpid2) && (partpid2 != 0))) &&
-	  ((onlyprim == 0) || ((buf.fatherpid == partpid) || ((buf.fatherpid == partpid2) && (partpid2 != 0))))) {
-	rap = 0.5*log((buf.e+buf.pz)/(buf.e-buf.pz));
-	peta = -TMath::Log(TMath::Tan(TMath::ATan2(pt, buf.pz)/2.0));
+      ((pt>ptmin2) && (pt<ptmax2) && (buf.pid == partpid2) && (partpid2 != 0))) &&
+      ((onlyprim == 0) || ((buf.fatherpid == partpid) || ((buf.fatherpid == partpid2) && (partpid2 != 0))))) {
+        rap = 0.5*log((buf.e+buf.pz)/(buf.e-buf.pz));
+        peta = -TMath::Log(TMath::Tan(TMath::ATan2(pt, buf.pz)/2.0));
 	
-	// Check if it is coming from a weak decay
-	isweak = 0;
-	for (int witer=0; witer<16; witer++) 
-	  if (buf.fatherpid == weakpid[witer]) isweak = 1;
+        // Check if it is coming from a weak decay
+        isweak = 0;
+        for (int witer=0; witer<16; witer++) 
+          if (buf.fatherpid == weakpid[witer]) isweak = 1;
 	      
-	if ((fabs(rap) < ABSRAP) &&
-	    ((fabs(peta) < ETAABS) || (nbin < 10) || (nbin>19)) &&
-	    ((!isweak) || (onlyprim == 2)))
-	  {
-	    if (buf.pid == partpid) {
-	      evbuf[eviter][evtscount[eviter]].x = buf.x;
-	      evbuf[eviter][evtscount[eviter]].y = buf.y;
-	      evbuf[eviter][evtscount[eviter]].z = buf.z;
-	      evbuf[eviter][evtscount[eviter]].t = buf.t;
-	      evbuf[eviter][evtscount[eviter]].px = buf.px;
-	      evbuf[eviter][evtscount[eviter]].py = buf.py;
-	      evbuf[eviter][evtscount[eviter]].pz = buf.pz;
-	      evbuf[eviter][evtscount[eviter]].e = buf.e;
-	      evbuf[eviter][evtscount[eviter]].pid = buf.pid;
-	      evbuf[eviter][evtscount[eviter]].fatherpid = buf.fatherpid;
-	      evbuf[eviter][evtscount[eviter]].rootpid = buf.rootpid;
-	      evbuf[eviter][evtscount[eviter]].mass = buf.mass;
-	      evbuf[eviter][evtscount[eviter]].eventid = buf.eventid;
-	      evtscount[eviter]++;
-	    }
-	    else if ((buf.pid == partpid2) && (partpid2 != 0)) {
-	      evbuf2[eviter][evtscount2[eviter]].x = buf.x;
-	      evbuf2[eviter][evtscount2[eviter]].y = buf.y;
-	      evbuf2[eviter][evtscount2[eviter]].z = buf.z;
-	      evbuf2[eviter][evtscount2[eviter]].t = buf.t;
-	      evbuf2[eviter][evtscount2[eviter]].px = buf.px;
-	      evbuf2[eviter][evtscount2[eviter]].py = buf.py;
-	      evbuf2[eviter][evtscount2[eviter]].pz = buf.pz;
-	      evbuf2[eviter][evtscount2[eviter]].e = buf.e;
-	      evbuf2[eviter][evtscount2[eviter]].pid = buf.pid;
-	      evbuf2[eviter][evtscount2[eviter]].fatherpid = buf.fatherpid;
-	      evbuf2[eviter][evtscount2[eviter]].rootpid = buf.rootpid;
-	      evbuf2[eviter][evtscount2[eviter]].mass = buf.mass;
-	      evbuf2[eviter][evtscount2[eviter]].eventid = buf.eventid;
-	      evtscount2[eviter]++;
-	    }
-	  }
+        if ((fabs(rap) < ABSRAP) &&
+        ((fabs(peta) < ETAABS) || (nbin < 10) || (nbin>19)) &&
+        ((!isweak) || (onlyprim == 2)))  {
+          if (buf.pid == partpid) {
+            evbuf[eviter][evtscount[eviter]].x = buf.x;
+            evbuf[eviter][evtscount[eviter]].y = buf.y;
+            evbuf[eviter][evtscount[eviter]].z = buf.z;
+            evbuf[eviter][evtscount[eviter]].t = buf.t;
+            evbuf[eviter][evtscount[eviter]].px = buf.px;
+            evbuf[eviter][evtscount[eviter]].py = buf.py;
+            evbuf[eviter][evtscount[eviter]].pz = buf.pz;
+            evbuf[eviter][evtscount[eviter]].e = buf.e;
+            evbuf[eviter][evtscount[eviter]].pid = buf.pid;
+            evbuf[eviter][evtscount[eviter]].fatherpid = buf.fatherpid;
+            evbuf[eviter][evtscount[eviter]].rootpid = buf.rootpid;
+            evbuf[eviter][evtscount[eviter]].mass = buf.mass;
+            evbuf[eviter][evtscount[eviter]].eventid = buf.eventid;
+            evtscount[eviter]++;
+          }
+          else if ((buf.pid == partpid2) && (partpid2 != 0)) {
+            evbuf2[eviter][evtscount2[eviter]].x = buf.x;
+            evbuf2[eviter][evtscount2[eviter]].y = buf.y;
+            evbuf2[eviter][evtscount2[eviter]].z = buf.z;
+            evbuf2[eviter][evtscount2[eviter]].t = buf.t;
+            evbuf2[eviter][evtscount2[eviter]].px = buf.px;
+            evbuf2[eviter][evtscount2[eviter]].py = buf.py;
+            evbuf2[eviter][evtscount2[eviter]].pz = buf.pz;
+            evbuf2[eviter][evtscount2[eviter]].e = buf.e;
+            evbuf2[eviter][evtscount2[eviter]].pid = buf.pid;
+            evbuf2[eviter][evtscount2[eviter]].fatherpid = buf.fatherpid;
+            evbuf2[eviter][evtscount2[eviter]].rootpid = buf.rootpid;
+            evbuf2[eviter][evtscount2[eviter]].mass = buf.mass;
+            evbuf2[eviter][evtscount2[eviter]].eventid = buf.eventid;
+            evtscount2[eviter]++;
+          }
+        }
       }
     }
   }
@@ -970,7 +979,10 @@ int main(int argc, char **argv)
   else if (pairtype == 2)
     sprintf(bufs, "%sfemtopp%i%s.root",sEventDir.Data(), nbin, onlyprim ? "p" : "a");
   else if (pairtype == 8)
-     sprintf(bufs, "%sfemtopiMpiM%i%s.root",sEventDir.Data(), nbin, onlyprim ? "p" : "a");
+    sprintf(bufs, "%sfemtopiMpiM%i%s.root",sEventDir.Data(), nbin, onlyprim ? "p" : "a");
+  else if(pairtype == 9)//mk
+    sprintf(bufs, "%sfemtonn%i%s.root",sEventDir.Data(), nbin, onlyprim ? "p" : "a");
+
 
   TFile *ofile = new TFile(bufs, "RECREATE");
   ofile->cd();
@@ -1151,6 +1163,12 @@ void InitializeGamow()
     partpid = -PIPID;
     partpid2 = 0;
   } 
+  else if (pairtype == 9) { //mk
+    pionac = 387.5 / 0.197327; 
+    partpid = NPID;
+    partpid2 = 0;
+
+  }
   else {
     cout << "Unknown pair type " << pairtype << endl;
     exit(0);

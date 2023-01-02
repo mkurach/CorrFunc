@@ -176,6 +176,7 @@ void compFixedPairs() {
             drawLine(hist[i][j][0][0],can[i][j][0]);
             fileOut[j]->cd();
             can[i][j][0]->Write();
+            can[i][j][0]->SaveAs(Form("./ladne/fixedPairs/%s%sEpsilonComp.pdf",cases[i].Data(),pairs[j].Data()));
 
             if (j == 0) {
                 can[i][j][1] = new TCanvas(Form("%s%sEpsilonCompQsc",cases[i].Data(),pairs[j].Data()),Form("%s%sEpsilonComp",cases[i].Data(),pairs[j].Data()),800,800);
@@ -193,6 +194,7 @@ void compFixedPairs() {
                 drawLine(hist[i][j][0][1],can[i][j][1]);
                 fileOut[j]->cd();
                 can[i][j][1]->Write();
+                can[i][j][1]->SaveAs(Form("./ladne/fixedPairs/%s%sEpsilonCompQsc.pdf",cases[i].Data(),pairs[j].Data()));
             }
 
         }

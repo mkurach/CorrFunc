@@ -8,12 +8,12 @@
 
 TString cases[_N_CASES_] = {"caseA","caseB","caseC"};
 TString pairs[_N_PAIRS_] = {"pp","pipi","piMpiM"};
-double gev = 1 / 0.1975;
+//double gev = 1.0 / 0.1975;
 
 
 Double_t fitFunction(Double_t *x, Double_t *par) { //  0 - normalizacja, 1 - lambda, 2 - R,
     Double_t lambda = par[1];
-    Double_t exp = TMath::Exp(-par[2]*par[2]*x[0]*x[0]*gev*gev);
+    Double_t exp = TMath::Exp(-par[2]*par[2]*x[0]*x[0]/0.038938);
     return par[0]*(1 + lambda * exp);
 
 }
@@ -89,7 +89,7 @@ void makeCorrFunc() {
                 lambdy[i][j][k] = fun->GetParameter(1);
                 lambdyErr[i][j][k] = fun->GetParError(1);
                 r[i][j][k] = fun->GetParameter(2);
-                r[i][j][k] = fun->GetParError(2);
+                rErr[i][j][k] = fun->GetParError(2);
 
             }
             fileOut[i][j]->Close();
@@ -110,19 +110,71 @@ void makeCorrFunc() {
             filetxt<<"\t"<<cases[j].Data()<<"\n";
 
             for(int k = 0; k < _N_EPSILON_; k++) {
+                filetxt<<std::setprecision(3);
                 filetxt<<"\t\tEpsilon = "<<k<<"\n";
-                filetxt<<"\t\t\tlambda = "<<lambdy[j][i][k];
-                filetxt<<"\tR = "<<r[j][i][k]<<"\n";
+                filetxt<<"\t\t\tlambda = "<<lambdy[j][i][k]<<" ("<<lambdyErr[j][i][k]<<")\t";
+                filetxt<<"\tR = "<<r[j][i][k]<<" ("<<rErr[j][i][k]<<")\n";
             }
 
         }
 
     }
 
+    //TXT FILE FOR LATEX
+
+    ofstream filetxt2;
+    filetxt2.open("./outputCorrFunc/fitResultsLatex.txt");
+
+    for(int i = 0; i < _N_PAIRS_; i++) {
+        filetxt2<<pairs[i].Data()<<"\n";
+        filetxt2<<"\\begin{tabular}{|c|c|c|c|c|c|c|}"<<endl;
+        filetxt2<<"\\hline\n\\hline\n";
+        filetxt2<<"{} & \\multicolumn{2}{c|}{Case A} & \\multicolumn{2}{c|}{Case B}& \\multicolumn{2}{c|}{Case C}\\\\"<<endl;
+        filetxt2<<"\\hline"<<endl;
+        filetxt2<<"$\\epsilon$ & $\\lambda$ & R (fm) & $\\lambda$ & R (fm)& $\\lambda$ & R (fm)\\\\"<<endl;
+        filetxt2<<"\\hline"<<endl;
+
+        for(int k = 0; k < _N_EPSILON_; k++) {
+            filetxt2<<"0."<<k;
+            for(int j = 0; j <_N_CASES_; j++) {
+                filetxt2<<std::setprecision(3);
+                filetxt2<<"&"<<lambdy[j][i][k];//<<" ("<<lambdyErr[j][i][k]<<")";
+                filetxt2<<"&"<<r[j][i][k];//<<" ("<<rErr[j][i][k]<<")";
+            }
+            filetxt2<<"\\\\"<<endl;
+
+        }
+
+        filetxt2<<"\\hline\n\\hline\n\\end{tabular}"<<endl;
+
+        
+
+    }
+
+    /*\begin{tabular}{|c|c|c|c|}
+    \hline
+    \hline
+    Parameter &  Case A & Case B & Case C\\
+    \hline
+    $T$ (MeV)  & $49.6$ & $70.3$ & $63.1$ \\
+    $R$ (fm) & $ 15.7 $ & $6.06$ & $9.29$ \\
+    $\mu_B$ (MeV)  & $776$ & $876$ & $782$ \\
+    $\mu_S$ (MeV)  & $123.4$ & $198.3$ & $145.7$ \\
+    $\mu_{I_3}$ (MeV) & $-14.1$ & $-21.5$ & $-24.5$ \\
+    $\gamma_S$ &  $0.16$ & $0.05$ & $0.04$ \\
+    $\chi^2/N_{\rm df}$  & $ N_{\rm df}=0 $ & $1.13/2$ & $62.30/5$ \\
+    \hline
+    \hline
+    $H$ (GeV)  & $0.01$ & $0.0225$ & $0.016$ \\
+    $\delta$ & $0.2$ & $0.4$ & $0.4$ \\
+    $\sqrt{Q^2}$  & $0.238$ & $0.256$ & $0.323$ \\
+    \hline
+    \hline
+    \end{tabular}*/
 
     //COMPARING FITTING RESULTS
 
-    TGraphErrors *grLambda[_N_CASES_][_N_PAIRS_];
+   /* TGraphErrors *grLambda[_N_CASES_][_N_PAIRS_];
     TGraphErrors *grR[_N_CASES_][_N_PAIRS_];
     TFile *fileOut2 = new TFile("./outputCorrFunc/fitResults.root", "RECREATE");
 
@@ -142,7 +194,7 @@ void makeCorrFunc() {
     }
 
     fileOut2->Close();
-    fileOut2->Save();
+    fileOut2->Save();*/
 
     gROOT -> SetBatch(kFALSE);
 

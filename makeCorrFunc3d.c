@@ -37,12 +37,15 @@ void makeCorrFunc3d() {
     //READING
     for(int i = 0; i < _N_CASES_; i++) {
         file[i] = new TFile(Form("./outputLustre3d/%s3d.root",cases[i].Data()));
-        //for (int j = 0; j < _N_PAIRS_; j++) {
-        for (int j = 0; j < 1; j++) {
+        for (int j = 0; j < _N_PAIRS_; j++) {
+        //for (int j = 0; j < 1; j++) {
             for(int k = 0; k < _N_EPSILON_; k++) {
-                num[i][j][k] = (TH3D*) file[i]->Get(Form("%sE%d%scnuma",cases[i].Data(),k,pairs[j].Data()));
-                den[i][j][k] = (TH3D*) file[i]->Get(Form("%sE%d%scdena",cases[i].Data(),k,pairs[j].Data()));
-
+                if ((i==0 && j==2 && k==4) || (i==0 && j==2 && k==5) || (i==0 && j==2 && k==6))
+                    continue;
+                else{
+                    num[i][j][k] = (TH3D*) file[i]->Get(Form("%sE%d%scnuma",cases[i].Data(),k,pairs[j].Data()));
+                    den[i][j][k] = (TH3D*) file[i]->Get(Form("%sE%d%scdena",cases[i].Data(),k,pairs[j].Data()));
+                }
             }
         }
     }
@@ -82,39 +85,44 @@ void makeCorrFunc3d() {
 
     for(int i = 0; i < _N_CASES_; i++) {
         cout<<cases[i].Data()<<endl;
-        //for (int j = 0; j < _N_PAIRS_; j++) {
-        for (int j = 0; j < 1; j++) {
+        for (int j = 0; j < _N_PAIRS_; j++) {
+        //for (int j = 0; j < 1; j++) {
             cout<<pairs[j].Data()<<endl;
             fileOut3d[i][j] = new TFile(Form("./outputCorrFunc3d/%s%s3d.root",cases[i].Data(),pairs[j].Data()),"RECREATE");
             fileOutFitProj[i][j] = new TFile(Form("./outputCorrFunc3d/outputFitProj/%s%sFitProj.root",cases[i].Data(),pairs[j].Data()),"RECREATE");
             for(int k = 0; k < _N_EPSILON_; k++) {
-                cout<<k<<endl;
-                histCorr[i][j][k] = new TH3D(*num[i][j][k]);
-                histCorr[i][j][k]->Divide(num[i][j][k],den[i][j][k],1.0,1.0);
-                histCorr[i][j][k]->SetTitle("corr func");
-                histCorr[i][j][k]->Fit(fun3d,"");
+                if ((i==0 && j==2 && k==4) || (i==0 && j==2 && k==5) || (i==0 && j==2 && k==6))
+                    continue;
+                else{
+                    cout<<k<<endl;
 
-                norm[i][j][k] = fun3d->GetParameter(0);
-                lambdy[i][j][k] = fun3d->GetParameter(1);
-                rOut[i][j][k] = fun3d->GetParameter(2);
-                rSide[i][j][k] = fun3d->GetParameter(3);
-                rLong[i][j][k] = fun3d->GetParameter(4);
+                    histCorr[i][j][k] = new TH3D(*num[i][j][k]);
+                    histCorr[i][j][k]->Divide(num[i][j][k],den[i][j][k],1.0,1.0);
+                    histCorr[i][j][k]->SetTitle("corr func");
+                    histCorr[i][j][k]->Fit(fun3d,"");
 
-                lambdyErr[i][j][k] = fun3d->GetParError(1);
-                rOutErr[i][j][k] = fun3d->GetParError(2);
-                rSideErr[i][j][k] = fun3d->GetParError(3);
-                rLongErr[i][j][k] = fun3d->GetParError(4);
-                
-                getfitprojc(den[i][j][k],&fit[i][j][k]);
+                    norm[i][j][k] = fun3d->GetParameter(0);
+                    lambdy[i][j][k] = fun3d->GetParameter(1);
+                    rOut[i][j][k] = fun3d->GetParameter(2);
+                    rSide[i][j][k] = fun3d->GetParameter(3);
+                    rLong[i][j][k] = fun3d->GetParameter(4);
 
-                fileOut3d[i][j]->cd();
-                histCorr[i][j][k]->Write();
+                    lambdyErr[i][j][k] = fun3d->GetParError(1);
+                    rOutErr[i][j][k] = fun3d->GetParError(2);
+                    rSideErr[i][j][k] = fun3d->GetParError(3);
+                    rLongErr[i][j][k] = fun3d->GetParError(4);
+                    
+                    getfitprojc(den[i][j][k],&fit[i][j][k]);
 
-                for(int l = 0; l < _N_PROJ_; l++) {
-                    fitProj[i][j][k][l] = hbtFit->getproj(fit[i][j][k],den[i][j][k],l,10,norm[i][j][k]);
-                    fitProj[i][j][k][l]->SetName(Form("%sE%d%sFitProj%s",cases[i].Data(),k,pairs[j].Data(),axes[l].Data()));
-                    fileOutFitProj[i][j]->cd();
-                    fitProj[i][j][k][l]->Write();
+                    fileOut3d[i][j]->cd();
+                    histCorr[i][j][k]->Write();
+
+                    for(int l = 0; l < _N_PROJ_; l++) {
+                        fitProj[i][j][k][l] = hbtFit->getproj(fit[i][j][k],den[i][j][k],l,10,norm[i][j][k]);
+                        fitProj[i][j][k][l]->SetName(Form("%sE%d%sFitProj%s",cases[i].Data(),k,pairs[j].Data(),axes[l].Data()));
+                        fileOutFitProj[i][j]->cd();
+                        fitProj[i][j][k][l]->Write();
+                    }
                 }
 
 
@@ -134,15 +142,19 @@ void makeCorrFunc3d() {
 
     for(int i = 0; i < _N_CASES_; i++) {
         filetxt<<cases[i].Data()<<endl;
-        //for (int j = 0; j < _N_PAIRS_; j++) {
-        for (int j = 0; j < 1; j++) {
+        for (int j = 0; j < _N_PAIRS_; j++) {
+        //for (int j = 0; j < 1; j++) {
             filetxt<<pairs[j].Data()<<endl;
             for(int k = 0; k < _N_EPSILON_; k++) {
-                filetxt<<"epsilon="<<k<<endl;
-                filetxt<<"\t\tlambda = "<<lambdy[i][j][k];
-                filetxt<<"\tRout = "<<rOut[i][j][k];
-                filetxt<<"\tRside = "<<rSide[i][j][k];
-                filetxt<<"\tRlong = "<<rLong[i][j][k]<<"\n";
+                if ((i==0 && j==2 && k==4) || (i==0 && j==2 && k==5) || (i==0 && j==2 && k==6))
+                    continue;
+                else{
+                    filetxt<<"epsilon="<<k<<endl;
+                    filetxt<<"\t\tlambda = "<<lambdy[i][j][k];
+                    filetxt<<"\tRout = "<<rOut[i][j][k];
+                    filetxt<<"\tRside = "<<rSide[i][j][k];
+                    filetxt<<"\tRlong = "<<rLong[i][j][k]<<"\n";
+                }
             }
         }
     }
@@ -154,8 +166,8 @@ void makeCorrFunc3d() {
     ofstream filetxt2;
     filetxt2.open("./outputCorrFunc3d/fitResultsLatex.txt");
 
-    //for(int i = 0; i < _N_PAIRS_; i++) {
-    for (int i = 0; i < 1; i++) {
+    for(int i = 0; i < _N_PAIRS_; i++) {
+    //for (int i = 0; i < 1; i++) {
         for(int j = 0; j <_N_CASES_; j++) {
             filetxt2<<pairs[i].Data()<<"\n";
             filetxt2<<"\\begin{tabular}{|c|c|c|c|c|}"<<endl;
@@ -166,14 +178,18 @@ void makeCorrFunc3d() {
             filetxt2<<"\\hline"<<endl;
 
             for(int k = 0; k < _N_EPSILON_; k++) {
-                filetxt2<<"0."<<k;
-                filetxt2<<std::setprecision(3);
-                filetxt2<<"&"<<lambdy[j][i][k];//<<" ("<<lambdyErr[j][i][k]<<")";
-                filetxt2<<"&"<<rOut[j][i][k];//<<" ("<<rErr[j][i][k]<<")";
-                filetxt2<<"&"<<rSide[j][i][k];
-                filetxt2<<"&"<<rLong[j][i][k];
-                
-                filetxt2<<"\\\\"<<endl;
+                if ((j==0 && i==2 && k==4) || (j==0 && i==2 && k==5) || (j==0 && i==2 && k==6))
+                    continue;
+                else{
+                    filetxt2<<"0."<<k;
+                    filetxt2<<std::setprecision(3);
+                    filetxt2<<"&"<<lambdy[j][i][k];//<<" ("<<lambdyErr[j][i][k]<<")";
+                    filetxt2<<"&"<<rOut[j][i][k];//<<" ("<<rErr[j][i][k]<<")";
+                    filetxt2<<"&"<<rSide[j][i][k];
+                    filetxt2<<"&"<<rLong[j][i][k];
+                    
+                    filetxt2<<"\\\\"<<endl;
+                }
 
             }
 
@@ -192,20 +208,25 @@ void makeCorrFunc3d() {
     TString yaxis[_N_PROJ_] = {"C(q_{out})","C(q_{side})","C(q_{long})"};
 
     for(int i = 0; i < _N_CASES_; i++) {
-        //for (int j = 0; j < _N_PAIRS_; j++) {
-        for (int j = 0; j < 1; j++) {
+        for (int j = 0; j < _N_PAIRS_; j++) {
+        //for (int j = 0; j < 1; j++) {
             fileOutProj[i][j] = new TFile(Form("./outputCorrFunc3d/outputHistProj/%s%sHistProj.root",cases[i].Data(),pairs[j].Data()),"RECREATE");
             for(int k = 0; k < _N_EPSILON_; k++) {
-                for(int l = 0; l < _N_PROJ_; l++) {
-                    histProj[i][j][k][l] = hbtFit->getproj(num[i][j][k],den[i][j][k],l,10,norm[i][j][k]);
-                    histProj[i][j][k][l]->SetName(Form("%sE%d%sHistProj%s",cases[i].Data(),k,pairs[j].Data(),axes[l].Data()));
-                    
-                    histProj[i][j][k][l]->GetXaxis()->SetTitle(xaxis[l].Data());
-                    histProj[i][j][k][l]->GetYaxis()->SetTitle(yaxis[l].Data());
+                if ((i==0 && j==2 && k==4) || (i==0 && j==2 && k==5) || (i==0 && j==2 && k==6))
+                    continue;
+                else{
 
-                    fileOutProj[i][j]->cd();
-                    histProj[i][j][k][l]->Write();
+                    for(int l = 0; l < _N_PROJ_; l++) {
+                        histProj[i][j][k][l] = hbtFit->getproj(num[i][j][k],den[i][j][k],l,10,norm[i][j][k]);
+                        histProj[i][j][k][l]->SetName(Form("%sE%d%sHistProj%s",cases[i].Data(),k,pairs[j].Data(),axes[l].Data()));
+                        
+                        histProj[i][j][k][l]->GetXaxis()->SetTitle(xaxis[l].Data());
+                        histProj[i][j][k][l]->GetYaxis()->SetTitle(yaxis[l].Data());
 
+                        fileOutProj[i][j]->cd();
+                        histProj[i][j][k][l]->Write();
+
+                    }
                 }
             
             }

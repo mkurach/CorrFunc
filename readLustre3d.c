@@ -19,19 +19,30 @@ void readLustre3d() {
 
     for(int i = 0; i < _N_CASES_; i++) {
         fileOut3d[i] = new TFile(Form("./outputLustre3d/%s3d.root",cases[i].Data()), "RECREATE");
+        cout<<cases[i].Data()<<endl;
         for(int j = 0; j < _N_EPSILON_; j++) {
-            //for(int k = 0; k < _N_PAIRS_; k++) {
-            for(int k = 0; k < 1; k++) {
+            cout<<j<<endl;
+            for(int k = 0; k < _N_PAIRS_; k++) {
+            //for(int k = 0; k < 1; k++) {
+                cout<<pairs[k]<<endl;
+
                 file[i][j][k] = new TFile(Form("../lustre/hades/user/mkurach/inz/%sLinks/%sE%d%s%s/femto%s19a.root",cases[i].Data(),hubb[i].Data(),j,delt[i].Data(),ending[k].Data(),pairs[k].Data()));
-                for(int l = 0; l < _N_HIST3D_; l++) {
+                if ((i==0 && j==4 && k==2) || (i==0 && j==5 && k==2) || (i==0 && j==6 && k==2))
+                    continue;
+                else{
+                    for(int l = 0; l < _N_HIST3D_; l++) {
                     hist3d[i][j][k][l] = (TH3D*) file[i][j][k]->Get(hists3d[l].Data());
                     hist3d[i][j][k][l] = (TH3D*)hist3d[i][j][k][l]->Clone(Form("%sE%d%s%s",cases[i].Data(),j,pairs[k].Data(),hists3d[l].Data()));
                     fileOut3d[i]->cd();
                     hist3d[i][j][k][l]->Write();
+                    }
                 }
             }
-            
+                
+
         }
+            
+        
         fileOut3d[i]->Save();
         fileOut3d[i]->Close();
         cout<<"End of "<<cases[i].Data()<<endl;

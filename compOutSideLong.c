@@ -359,12 +359,12 @@ void compOutSideLong() {
             fileHistProj[i][j] = new TFile(Form("./outputCorrFunc3d/outputHistProj/%s%sHistProj.root",cases[i].Data(),pairs[j].Data()));
             for(int k = 0; k < _N_PROJ_; k++) {
                 for(int l = 0; l < _N_EPSILON_; l++) {
-					if ((i==0 && j==2 && l==4) || (i==0 && j==2 && l==5) || (i==0 && j==2 && l==6))
-						continue;
-					else {
+					//if ((i==0 && j==2 && l==4) || (i==0 && j==2 && l==5) || (i==0 && j==2 && l==6))
+						//continue;
+					//else {
 						fitProj[i][j][k][l] = (TH1D*) fileFitProj[i][j]->Get(Form("%sE%d%sFitProj%s",cases[i].Data(),l,pairs[j].Data(),axes[k].Data()));
 						histProj[i][j][k][l] = (TH1D*) fileHistProj[i][j]->Get(Form("%sE%d%sHistProj%s",cases[i].Data(),l,pairs[j].Data(),axes[k].Data()));
-					}
+					//}
                 }
             }
         }
@@ -390,9 +390,9 @@ void compOutSideLong() {
             for(int k = 0; k < _N_PROJ_; k++) {
                 xpad[i][j][k][0]->cd();
                 histProj[i][j][k][0]->GetYaxis()->SetTitle("C(q)");
-				if (i==0 && j==2)
-                    multiplePlotPion(histProj[i][j][k],fitProj[i][j][k], entries, 4, true);
-				else if(j==1 || j==2)
+				//if (i==0 && j==2)
+                  //  multiplePlotPion(histProj[i][j][k],fitProj[i][j][k], entries, 4, true);
+				if(j==1 || j==2)
 					multiplePlotPion(histProj[i][j][k],fitProj[i][j][k], entries, 7, true);
                 else
 					multiplePlot(histProj[i][j][k],fitProj[i][j][k], entries, 7, false); 
@@ -412,10 +412,12 @@ void compOutSideLong() {
 
                 }
 
-				fileOut[i]->cd();
-                can[i][j]->Write();
-                can[i][j]->SaveAs(Form("./ladne/compOutSideLong/%s%s.pdf",cases[i].Data(),pairs[j].Data()));
+
             }
+
+            fileOut[i]->cd();
+            can[i][j]->Write();
+            can[i][j]->SaveAs(Form("./ladne/compOutSideLong/%s%s.pdf",cases[i].Data(),pairs[j].Data()));
         }
 
 		fileOut[i]->Close();

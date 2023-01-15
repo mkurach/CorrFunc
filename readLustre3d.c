@@ -27,16 +27,14 @@ void readLustre3d() {
                 cout<<pairs[k]<<endl;
 
                 file[i][j][k] = new TFile(Form("../lustre/hades/user/mkurach/inz/%sLinks/%sE%d%s%s/femto%s19a.root",cases[i].Data(),hubb[i].Data(),j,delt[i].Data(),ending[k].Data(),pairs[k].Data()));
-                if ((i==0 && j==4 && k==2) || (i==0 && j==5 && k==2) || (i==0 && j==6 && k==2))
-                    continue;
-                else{
-                    for(int l = 0; l < _N_HIST3D_; l++) {
-                    hist3d[i][j][k][l] = (TH3D*) file[i][j][k]->Get(hists3d[l].Data());
-                    hist3d[i][j][k][l] = (TH3D*)hist3d[i][j][k][l]->Clone(Form("%sE%d%s%s",cases[i].Data(),j,pairs[k].Data(),hists3d[l].Data()));
-                    fileOut3d[i]->cd();
-                    hist3d[i][j][k][l]->Write();
-                    }
+
+                for(int l = 0; l < _N_HIST3D_; l++) {
+                hist3d[i][j][k][l] = (TH3D*) file[i][j][k]->Get(hists3d[l].Data());
+                hist3d[i][j][k][l] = (TH3D*)hist3d[i][j][k][l]->Clone(Form("%sE%d%s%s",cases[i].Data(),j,pairs[k].Data(),hists3d[l].Data()));
+                fileOut3d[i]->cd();
+                hist3d[i][j][k][l]->Write();
                 }
+                
             }
                 
 
